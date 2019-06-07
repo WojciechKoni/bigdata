@@ -1,0 +1,29 @@
+
+
+
+# start globalne
+hive -f ~/HIVE/0_CREATE_DB/0_create_all_databases_script.hql --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/5_AUDIT/5_audit_log_create.hql  --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/1_RAW/1_create_tables_script.hql --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/2_STAGE/2_1_create_tables_stage.hql --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/3_MAIN/hive_main_database_create_script.hql  --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/4_AGGR/hive_aggr_database_create_tables_script.hql  --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/7_PRESENTATION/create_views_script.hql  --hiveconf FORUM_NAME=boardgames
+# koniec globalne
+
+# dla kazdego forum
+./prepare_forum_files.ksh boardgames
+hive -f ~/HIVE/1_RAW/1_create_tables_script.hql --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/2_STAGE/2_2_load_tables_stage.hql --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/3_MAIN/hive_main_database_load_script.hql  --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/4_AGGR/hive_aggr_temp_database_create_and_load_script.hql  --hiveconf FORUM_NAME=boardgames
+hive -f ~/HIVE/4_AGGR/hive_aggr_tables_load_script.hql  --hiveconf FORUM_NAME=boardgames
+
+spark-shell -i ~/SPARK/word_rank.scala --conf spark.driver.args="boardgames" --jars ~/hivexmlserde-1.0.5.3.jar
+spark-shell -i ~/SPARK/user_ranks.scala --conf spark.driver.args="boardgames" --jars ~/hivexmlserde-1.0.5.3.jar
+spark-shell -i ~/SPARK/table_stats.scala --conf spark.driver.args="boardgames" --jars ~/hivexmlserde-1.0.5.3.jar
+
+# te na koncu - globalne
+
+
+spark-shell -i ~/SPARK/column_stats.scala  --jars ~/hivexmlserde-1.0.5.3.jar
